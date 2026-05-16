@@ -9,12 +9,14 @@ import (
     "os/signal"
     "strconv"
     "strings"
+	"tdrive/tgclient"
 
     "github.com/gotd/td/session"
     "github.com/gotd/td/telegram"
     "github.com/gotd/td/telegram/auth"
     "github.com/gotd/td/tg"
     "github.com/joho/godotenv"
+	"golang.org/x/term"
 )
 
 type consoleAuth struct {
@@ -28,12 +30,13 @@ func (a *consoleAuth) Phone(ctx context.Context) (string, error) {
 
 func (a *consoleAuth) Password(ctx context.Context) (string, error) {
     fmt.Print("Введите пароль 2FA, если Telegram попросил: ")
-    text, err := a.reader.ReadString('\n')
+    passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
     if err != nil {
         return "", err
     }
 
-    return strings.TrimSpace(text), nil
+    return string(passwordBytes), nil
 }
 
 func (a *consoleAuth) SignUp(ctx context.Context) (auth.UserInfo, error) {
@@ -125,6 +128,9 @@ func main() {
             username,
             self.ID,
         )
+		if err := tgclient.CreateSupergroup(ctx, client); err != nil {
+			return err
+		}
 
         return nil
     })
