@@ -146,12 +146,19 @@ func main() {
 		}
 		
 		fmt.Println(groups[0].Title)
+		
+		forumid, err := tgclient.CreateForumTopic(ctx, client, groups[0].Channel, "отшельник")
+		if err != nil{
+			return err
+		}
+		fmt.Println(forumid)
+		
 		count, err := tgclient.GetTopicMessageCount(ctx, api, groups[0].Peer, 1); 
 		if err != nil {
 			return err
 		}
 		fmt.Println(count)
-		
+
         return nil
     })})
 

@@ -3,11 +3,13 @@ package tgclient
 import (
     "context"
     "fmt"
-	"strings"
+    "strings"
+    "time"
 
-	"github.com/gotd/td/telegram/query"
-	"github.com/gotd/td/telegram/query/dialogs"
-	"github.com/gotd/td/telegram/query/messages"
+    "github.com/gotd/td/telegram/query"
+	"github.com/gotd/td/telegram"
+    "github.com/gotd/td/telegram/query/dialogs"
+    "github.com/gotd/td/telegram/query/messages"
     "github.com/gotd/td/tg"
 )
 
@@ -17,6 +19,10 @@ type GroupRef struct {
     AccessHash int64
     Peer       tg.InputPeerClass
     Channel    tg.InputChannelClass
+}
+
+func randomID() int64 {
+    return time.Now().UnixNano()
 }
 
 func CreateSupergroup(ctx context.Context, api *tg.Client, title string) (*GroupRef, error) {
@@ -87,21 +93,6 @@ func GetTopicMessageCount(
     return count, nil
 }
 
-func GetGeneralMessageCount(
-    ctx context.Context,
-    api *tg.Client,
-    peer tg.InputPeerClass,
-) (int, error) {
-    count, err := messages.NewQueryBuilder(api).
-        GetHistory(peer).
-        Count(ctx)
-    if err != nil {
-        return 0, err
-    }
-
-    return count, nil
-}
-
 func FindDiskGroups(ctx context.Context, api *tg.Client) ([]GroupRef, error) {
 	const prefix = "[Disk]"
 
@@ -153,4 +144,30 @@ func FindDiskGroups(ctx context.Context, api *tg.Client) ([]GroupRef, error) {
 	}
 
 	return groups, nil
+}
+
+func CreateForumTopic(
+    ctx context.Context,
+    client *telegram.Client,
+    channel tg.InputChannelClass,
+    title string,
+) (int, error) {
+    var result tg.UpdatesBox
+
+    req := &channelsCreateForumTopicRequest{
+        Channel:  channel,
+        Title:    title,
+        RandomID: randomID(),
+    }
+
+    if err := client.Invoke(ctx, req, &result); err != nil {
+        return 0, fmt.Errorf("create forum topic: %w", err)
+    }
+
+	topicID, ok := getCreatedTopicID(result.Updates)
+    if !ok {
+        return 0, fmt.Errorf("create forum topic: topic id not found in updates: %T", result.Updates)
+    }
+
+    return topicID, nil
 }

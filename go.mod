@@ -3,6 +3,7 @@ module tdrive
 go 1.26.3
 
 require (
+	github.com/gotd/contrib v0.21.2-0.20251006130620-1040c8df1836
 	github.com/gotd/td v0.144.0
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.51.0
@@ -21,7 +22,6 @@ require (
 	github.com/go-faster/xor v1.0.0 // indirect
 	github.com/go-faster/yaml v0.4.6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gotd/contrib v0.21.1 // indirect
 	github.com/gotd/ige v0.2.2 // indirect
 	github.com/gotd/neo v0.1.5 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
