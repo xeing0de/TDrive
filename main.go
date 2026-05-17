@@ -17,6 +17,7 @@ import (
     "github.com/gotd/td/tg"
     "github.com/joho/godotenv"
 	"golang.org/x/term"
+	"github.com/gotd/contrib/middleware/floodwait"
 )
 
 type consoleAuth struct {
@@ -96,10 +97,15 @@ func main() {
     ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
     defer cancel()
 
+	waiter := floodwait.NewWaiter()
+
     client := telegram.NewClient(apiID, apiHash, telegram.Options{
         SessionStorage: &session.FileStorage{
             Path: sessionFile,
         },
+		Middlewares: []telegram.Middleware{
+        	waiter,
+    	},
     })
 
     flow := auth.NewFlow(&consoleAuth{
@@ -107,7 +113,8 @@ func main() {
         reader: bufio.NewReader(os.Stdin),
     }, auth.SendCodeOptions{})
 
-    err = client.Run(ctx, func(ctx context.Context) error {
+    err = waiter.Run(ctx , func(ctx context.Context) error {
+		return client.Run(ctx, func(ctx context.Context) error {
 		if err := client.Auth().IfNecessary(ctx, flow); err != nil {
             return err
         }
@@ -128,12 +135,25 @@ func main() {
             username,
             self.ID,
         )
-		if err := tgclient.CreateSupergroup(ctx, client); err != nil {
+		api := tg.NewClient(client)
+		/*group, err := tgclient.CreateSupergroup(ctx, api, "Test");
+		if err != nil {
+			return err
+		}*/
+		groups, err := tgclient.FindDiskGroups(ctx, api)
+		if err != nil{
 			return err
 		}
-
+		
+		fmt.Println(groups[0].Title)
+		count, err := tgclient.GetTopicMessageCount(ctx, api, groups[0].Peer, 1); 
+		if err != nil {
+			return err
+		}
+		fmt.Println(count)
+		
         return nil
-    })
+    })})
 
     if err != nil {
         fmt.Fprintln(os.Stderr, "Ошибка:", err)
