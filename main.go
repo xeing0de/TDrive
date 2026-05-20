@@ -136,35 +136,21 @@ func main() {
             self.ID,
         )
 		api := tg.NewClient(client)
-		/*group, err := tgclient.CreateSupergroup(ctx, api, "Test");
-		if err != nil {
-			return err
-		}*/
+		
 		groups, err := tgclient.FindDiskGroups(ctx, api)
 		if err != nil{
 			return err
 		}
 		
 		fmt.Println(groups[0].Title)
-		
-		forumid, err := tgclient.CreateTopic(ctx, client, groups[0].Channel, "отшельник")
-		if err != nil{
-			return err
-		}
-		fmt.Println(forumid)
-
-		if err := tgclient.DeleteTopic(ctx, client, groups[0].Channel, forumid); err != nil{
-			return err
-		}
-		
+				
 		count, err := tgclient.GetTopicMessageCount(ctx, api, groups[0].Peer, 1); 
 		if err != nil {
 			return err
 		}
 		fmt.Println(count)
 
-		s := strings.Repeat("a", 4096)
-		if err := tgclient.SendMessageToTopic(ctx, api, groups[0].Peer, 1, s); err != nil{
+		if err := tgclient.SendFileToTopic(ctx, api, groups[0].Peer, "steam-2767030.log", 1, "1"); err != nil{
 			return err
 		}
 

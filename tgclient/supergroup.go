@@ -5,15 +5,14 @@ import (
     "fmt"
     "strings"
     "time"
-	"crypto/rand"
-	"math"
-	"math/big"
+	"path/filepath"
 
     "github.com/gotd/td/telegram/query"
 	"github.com/gotd/td/telegram"
     "github.com/gotd/td/telegram/query/dialogs"
     "github.com/gotd/td/telegram/query/messages"
     "github.com/gotd/td/tg"
+	"github.com/gotd/td/telegram/uploader"
 )
 
 type GroupRef struct {
@@ -182,19 +181,13 @@ func SendMessageToTopic(
     topicID int,
     text string,
 ) error {
-
-    randomID, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
-    if err != nil {
-        return fmt.Errorf("generate random id: %w", err)
-    }
-
-    _, err = api.MessagesSendMessage(ctx, &tg.MessagesSendMessageRequest{
+	_, err := api.MessagesSendMessage(ctx, &tg.MessagesSendMessageRequest{
         Peer: peer,
         ReplyTo: &tg.InputReplyToMessage{
             ReplyToMsgID: topicID,
         },
         Message:  text,
-        RandomID: randomID.Int64(),
+        RandomID: randomID(),
     })
     if err != nil {
         return fmt.Errorf("send message to topic: %w", err)
@@ -218,6 +211,44 @@ func DeleteTopic(
 
     if err := client.Invoke(ctx, req, &result); err != nil {
         return fmt.Errorf("delete forum topic: %w", err)
+    }
+
+    return nil
+}
+
+func SendFileToTopic(
+    ctx context.Context,
+    api *tg.Client,
+    peer tg.InputPeerClass,
+    filePath string,
+    topicID int,
+    caption string,
+) error {
+    upload, err := uploader.NewUploader(api).
+    	WithPartSize(512 * 1024).
+    	FromPath(ctx, filePath)    
+	if err != nil {
+        return fmt.Errorf("upload file: %w", err)
+    }
+
+    fileName := filepath.Base(filePath)
+
+    _, err = api.MessagesSendMedia(ctx, &tg.MessagesSendMediaRequest{
+        Peer: peer,
+        Media: &tg.InputMediaUploadedDocument{
+            File:     upload,
+            MimeType: "application/octet-stream",
+            Attributes: []tg.DocumentAttributeClass{
+                &tg.DocumentAttributeFilename{
+                    FileName: fileName,
+                },
+            },
+        },
+        Message:  caption,
+        RandomID: randomID(),
+    })
+    if err != nil {
+        return fmt.Errorf("send media: %w", err)
     }
 
     return nil
