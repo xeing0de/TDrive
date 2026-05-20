@@ -7,9 +7,10 @@ import (
     "github.com/gotd/td/tg"
 )
 
-const channelsCreateForumTopicTypeID = 0xf40c0224
+const channelsCreateTopicTypeID = 0xf40c0224
+const channelsDeleteTopicHistoryTypeID = 0x34435f2d
 
-type channelsCreateForumTopicRequest struct {
+type channelsCreateTopicRequest struct {
     Flags       bin.Fields
     Channel     tg.InputChannelClass
     Title       string
@@ -19,15 +20,20 @@ type channelsCreateForumTopicRequest struct {
     SendAs      tg.InputPeerClass
 }
 
-func (r *channelsCreateForumTopicRequest) TypeID() uint32 {
-    return channelsCreateForumTopicTypeID
+type channelsDeleteTopicHistoryRequest struct {
+    Channel  tg.InputChannelClass
+    TopMsgID int
 }
 
-func (r *channelsCreateForumTopicRequest) TypeName() string {
-    return "channels.createForumTopic"
+func (r *channelsCreateTopicRequest) TypeID() uint32 {
+    return channelsCreateTopicTypeID
 }
 
-func (r *channelsCreateForumTopicRequest) SetFlags() {
+func (r *channelsCreateTopicRequest) TypeName() string {
+    return "channels.createTopic"
+}
+
+func (r *channelsCreateTopicRequest) SetFlags() {
     if r.IconColor != 0 {
         r.Flags.Set(0)
     }
@@ -41,33 +47,33 @@ func (r *channelsCreateForumTopicRequest) SetFlags() {
     }
 }
 
-func (r *channelsCreateForumTopicRequest) Encode(b *bin.Buffer) error {
+func (r *channelsCreateTopicRequest) Encode(b *bin.Buffer) error {
     if r == nil {
-        return fmt.Errorf("can't encode channels.createForumTopic#f40c0224 as nil")
+        return fmt.Errorf("can't encode channels.createTopic#f40c0224 as nil")
     }
 
-    b.PutID(channelsCreateForumTopicTypeID)
+    b.PutID(channelsCreateTopicTypeID)
 
     return r.EncodeBare(b)
 }
 
-func (r *channelsCreateForumTopicRequest) EncodeBare(b *bin.Buffer) error {
+func (r *channelsCreateTopicRequest) EncodeBare(b *bin.Buffer) error {
     if r == nil {
-        return fmt.Errorf("can't encode channels.createForumTopic#f40c0224 as nil")
+        return fmt.Errorf("can't encode channels.createTopic#f40c0224 as nil")
     }
 
     r.SetFlags()
 
     if err := r.Flags.Encode(b); err != nil {
-        return fmt.Errorf("encode channels.createForumTopic flags: %w", err)
+        return fmt.Errorf("encode channels.createTopic flags: %w", err)
     }
 
     if r.Channel == nil {
-        return fmt.Errorf("encode channels.createForumTopic: channel is nil")
+        return fmt.Errorf("encode channels.createTopic: channel is nil")
     }
 
     if err := r.Channel.Encode(b); err != nil {
-        return fmt.Errorf("encode channels.createForumTopic channel: %w", err)
+        return fmt.Errorf("encode channels.createTopic channel: %w", err)
     }
 
     b.PutString(r.Title)
@@ -84,11 +90,11 @@ func (r *channelsCreateForumTopicRequest) EncodeBare(b *bin.Buffer) error {
 
     if r.Flags.Has(2) {
         if r.SendAs == nil {
-            return fmt.Errorf("encode channels.createForumTopic: send_as is nil")
+            return fmt.Errorf("encode channels.createTopic: send_as is nil")
         }
 
         if err := r.SendAs.Encode(b); err != nil {
-            return fmt.Errorf("encode channels.createForumTopic send_as: %w", err)
+            return fmt.Errorf("encode channels.createTopic send_as: %w", err)
         }
     }
 
@@ -152,4 +158,38 @@ func getCreatedTopicIDFromMessage(message tg.MessageClass) (int, bool) {
     return msg.ID, true
 }
 
+func (r *channelsDeleteTopicHistoryRequest) TypeID() uint32 {
+    return channelsDeleteTopicHistoryTypeID
+}
 
+func (r *channelsDeleteTopicHistoryRequest) TypeName() string {
+    return "channels.deleteTopicHistory"
+}
+
+func (r *channelsDeleteTopicHistoryRequest) Encode(b *bin.Buffer) error {
+    if r == nil {
+        return fmt.Errorf("can't encode channels.deleteTopicHistory#34435f2d as nil")
+    }
+
+    b.PutID(channelsDeleteTopicHistoryTypeID)
+
+    return r.EncodeBare(b)
+}
+
+func (r *channelsDeleteTopicHistoryRequest) EncodeBare(b *bin.Buffer) error {
+    if r == nil {
+        return fmt.Errorf("can't encode channels.deleteTopicHistory#34435f2d as nil")
+    }
+
+    if r.Channel == nil {
+        return fmt.Errorf("encode channels.deleteTopicHistory: channel is nil")
+    }
+
+    if err := r.Channel.Encode(b); err != nil {
+        return fmt.Errorf("encode channels.deleteTopicHistory channel: %w", err)
+    }
+
+    b.PutInt(r.TopMsgID)
+
+    return nil
+}

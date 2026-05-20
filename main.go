@@ -147,17 +147,26 @@ func main() {
 		
 		fmt.Println(groups[0].Title)
 		
-		forumid, err := tgclient.CreateForumTopic(ctx, client, groups[0].Channel, "отшельник")
+		forumid, err := tgclient.CreateTopic(ctx, client, groups[0].Channel, "отшельник")
 		if err != nil{
 			return err
 		}
 		fmt.Println(forumid)
+
+		if err := tgclient.DeleteTopic(ctx, client, groups[0].Channel, forumid); err != nil{
+			return err
+		}
 		
 		count, err := tgclient.GetTopicMessageCount(ctx, api, groups[0].Peer, 1); 
 		if err != nil {
 			return err
 		}
 		fmt.Println(count)
+
+		s := strings.Repeat("a", 4096)
+		if err := tgclient.SendMessageToTopic(ctx, api, groups[0].Peer, 1, s); err != nil{
+			return err
+		}
 
         return nil
     })})

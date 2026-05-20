@@ -5,6 +5,9 @@ import (
     "fmt"
     "strings"
     "time"
+	"crypto/rand"
+	"math"
+	"math/big"
 
     "github.com/gotd/td/telegram/query"
 	"github.com/gotd/td/telegram"
@@ -146,7 +149,7 @@ func FindDiskGroups(ctx context.Context, api *tg.Client) ([]GroupRef, error) {
 	return groups, nil
 }
 
-func CreateForumTopic(
+func CreateTopic(
     ctx context.Context,
     client *telegram.Client,
     channel tg.InputChannelClass,
@@ -154,7 +157,7 @@ func CreateForumTopic(
 ) (int, error) {
     var result tg.UpdatesBox
 
-    req := &channelsCreateForumTopicRequest{
+    req := &channelsCreateTopicRequest{
         Channel:  channel,
         Title:    title,
         RandomID: randomID(),
@@ -166,8 +169,56 @@ func CreateForumTopic(
 
 	topicID, ok := getCreatedTopicID(result.Updates)
     if !ok {
-        return 0, fmt.Errorf("create forum topic: topic id not found in updates: %T", result.Updates)
+        return 0, fmt.Errorf("create topic: topic id not found in updates: %T", result.Updates)
     }
 
     return topicID, nil
+}
+
+func SendMessageToTopic(
+    ctx context.Context,
+    api *tg.Client,
+    peer tg.InputPeerClass,
+    topicID int,
+    text string,
+) error {
+
+    randomID, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+    if err != nil {
+        return fmt.Errorf("generate random id: %w", err)
+    }
+
+    _, err = api.MessagesSendMessage(ctx, &tg.MessagesSendMessageRequest{
+        Peer: peer,
+        ReplyTo: &tg.InputReplyToMessage{
+            ReplyToMsgID: topicID,
+        },
+        Message:  text,
+        RandomID: randomID.Int64(),
+    })
+    if err != nil {
+        return fmt.Errorf("send message to topic: %w", err)
+    }
+
+    return nil
+}
+
+func DeleteTopic(
+    ctx context.Context,
+    client *telegram.Client,
+    channel tg.InputChannelClass,
+    topicID int,
+) error {
+    var result tg.MessagesAffectedHistory
+
+    req := &channelsDeleteTopicHistoryRequest{
+        Channel:  channel,
+        TopMsgID: topicID,
+    }
+
+    if err := client.Invoke(ctx, req, &result); err != nil {
+        return fmt.Errorf("delete forum topic: %w", err)
+    }
+
+    return nil
 }
